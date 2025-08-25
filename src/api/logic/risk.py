@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 import folium
 from folium.plugins import HeatMap
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Dict, Any
 
 
 class RiskUseCase:
@@ -288,17 +288,3 @@ class RiskUseCase:
         print(f"[RiskUseCase] Mapa salvo como '{out_file}'")
 
 
-# teste rápido
-if __name__ == "__main__":
-    usecase = RiskUseCase()
-    route = [
-        (-23.5505, -46.6333),
-        (-23.5530, -46.6310),
-        (-23.5560, -46.6280),
-        (-23.5600, -46.6250),
-        (-23.5630, -46.6520),
-        (-23.5700, -46.6400),
-    ]
-    summary = usecase.route_risk_assessment(route, expected_hour=14, weekday=2)
-    print(summary)
-    usecase.create_heatmap(summary["results"], out_file="analise_rota_usecase.html")

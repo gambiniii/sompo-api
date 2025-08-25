@@ -12,12 +12,11 @@ app = FastAPI(
     openapi_tags=[
         {
             "name": "risks",
-            "description": "Operações relacionadas à avaliação de riscos em trajetos"
+            "description": "Operações relacionadas à avaliação de riscos em trajetos",
         }
-    ]
+    ],
 )
 
-app.include_router(risk_router)
 
 # Health check endpoint
 @app.get("/", tags=["Health Check"])
@@ -25,9 +24,13 @@ async def root():
     return {
         "message": "Sompo API está funcionando!",
         "docs": "/docs",
-        "redoc": "/redoc"
+        "redoc": "/redoc",
     }
+
 
 @app.get("/health", tags=["Health Check"])
 async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
+
+
+app.include_router(risk_router)
