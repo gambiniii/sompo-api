@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from src.api.routes.routes import risk_router
-from src.database.session import engine
+from src.config.database import engine
 from src.database.entities.base import Base
 
 # Cria as tabelas no banco (apenas se não estiver usando migrations)
