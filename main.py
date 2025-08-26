@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from src.api.routes.routes import risk_router
+from src.database.session import engine
+from src.database.entities.base import Base
+
+# Cria as tabelas no banco (apenas se não estiver usando migrations)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Sompo API - Sistema de Avaliação de Riscos",
@@ -17,7 +22,6 @@ app = FastAPI(
     ],
 )
 
-
 # Health check endpoint
 @app.get("/", tags=["Health Check"])
 async def root():
@@ -33,4 +37,5 @@ async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
 
+# Registra as rotas
 app.include_router(risk_router)
