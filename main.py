@@ -10,10 +10,6 @@ app = FastAPI(
     title="Sompo API - Sistema de Avaliação de Riscos",
     description="API para avaliação de riscos em trajetos e gerenciamento de seguros",
     version="1.0.0",
-    contact={
-        "name": "Equipe Sompo",
-        "email": "suporte@sompo.com.br",
-    },
     openapi_tags=[
         {
             "name": "risks",
