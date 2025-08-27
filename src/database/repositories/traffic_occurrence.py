@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from database.models import TrafficOccurrence
+from database.entities.traffice_occurrence import TrafficOccurrence
 from base import BaseRepository
 
 
