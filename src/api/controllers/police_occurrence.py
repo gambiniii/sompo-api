@@ -11,7 +11,6 @@ from src.api.schemas.police_occurrence import (
 
 class PoliceOccurrenceController:
     def create(self, db: Session, data: PoliceOccurrenceCreate):
-        # valida FK: o tipo precisa existir
         exists = (
             db.query(PoliceOccurrenceType.id)
             .filter(PoliceOccurrenceType.id == int(data.police_occurrence_type_id))

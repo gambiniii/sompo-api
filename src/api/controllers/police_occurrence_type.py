@@ -11,7 +11,6 @@ from src.api.schemas.police_occurrence_type import (
 
 class PoliceOccurrenceTypeController:
     def create(self, db: Session, data: PoliceOccurrenceTypeCreate) -> PoliceOccurrenceTypeOut:
-        # opcional: normalizar para evitar duplicados por case/espaço
         exists = (
             db.query(PoliceOccurrenceType)
               .filter(func.lower(PoliceOccurrenceType.name) == data.name.strip().lower())
@@ -29,7 +28,7 @@ class PoliceOccurrenceTypeController:
             db.commit()
         except IntegrityError:
             db.rollback()
-            # cobre UNIQUE no banco, caso exista
+            
             raise ValueError("police_occurrence_type name must be unique")
         db.refresh(obj)
         return obj

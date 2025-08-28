@@ -12,4 +12,4 @@ class PoliceOccurrenceTypeOut(PoliceOccurrenceTypeBase):
     id: int
 
     class Config:
-        from_attributes = True  # pydantic v2
+        from_attributes = True  
