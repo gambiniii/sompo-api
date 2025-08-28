@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
-from base import Base
+from .base import Base
 
 class PoliceOccurrence(Base):
     __tablename__ = "police_occurrences"
