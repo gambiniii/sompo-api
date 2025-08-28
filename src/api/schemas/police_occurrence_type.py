@@ -5,10 +5,10 @@ class PoliceOccurrenceTypeBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     description: Optional[str] = Field(None, max_length=255)
 
-class PoliceOccurrenceTypeCreate(PoliceOccurrenceTypeBase):
+class TrafficOccurrenceTypeCreate(PoliceOccurrenceTypeBase):
     pass
 
-class PoliceOccurrenceTypeOut(PoliceOccurrenceTypeBase):
+class TrafficOccurrenceTypeOut(PoliceOccurrenceTypeBase):
     id: int
 
     class Config:

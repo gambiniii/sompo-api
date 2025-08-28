@@ -9,10 +9,10 @@ class PoliceOccurrenceBase(BaseModel):
     occurred_at: date
     h3_id: str = Field(..., min_length=1, max_length=20)
 
-class PoliceOccurrenceCreate(PoliceOccurrenceBase):
+class TrafficOccurrenceCreate(PoliceOccurrenceBase):
     pass
 
-class PoliceOccurrenceOut(PoliceOccurrenceBase):
+class TrafficOccurrenceOut(PoliceOccurrenceBase):
     id: int
     class Config:
         from_attributes = True

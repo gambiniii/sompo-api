@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from src.config.database import get_db
 from src.api.controllers.police_occurrence_type import PoliceOccurrenceTypeController
 from src.api.schemas.police_occurrence_type import (
-    PoliceOccurrenceTypeCreate,
-    PoliceOccurrenceTypeOut,
+    TrafficOccurrenceTypeCreate,
+    TrafficOccurrenceTypeOut,
 )
 
 police_occurrence_type_router = APIRouter(
@@ -17,7 +17,7 @@ police_occurrence_type_router = APIRouter(
 controller = PoliceOccurrenceTypeController()
 
 # GET /police_occurrence_types
-@police_occurrence_type_router.get("/", response_model=List[PoliceOccurrenceTypeOut])
+@police_occurrence_type_router.get("/", response_model=List[TrafficOccurrenceTypeOut])
 def list_types(
     q: Optional[str] = Query(None, description="filtro por nome (contains, case-insensitive)"),
     limit: int = Query(100, ge=1, le=1000),
@@ -27,7 +27,7 @@ def list_types(
     return controller.list(db, q=q, limit=limit, offset=offset)
 
 # GET /police_occurrence_types/{id}
-@police_occurrence_type_router.get("/{type_id}", response_model=PoliceOccurrenceTypeOut)
+@police_occurrence_type_router.get("/{type_id}", response_model=TrafficOccurrenceTypeOut)
 def get_type(type_id: int, db: Session = Depends(get_db)):
     obj = controller.get_by_id(db, type_id)
     if not obj:
@@ -35,8 +35,8 @@ def get_type(type_id: int, db: Session = Depends(get_db)):
     return obj
 
 # POST /police_occurrence_types
-@police_occurrence_type_router.post("/", response_model=PoliceOccurrenceTypeOut, status_code=201)
-def create_type(payload: PoliceOccurrenceTypeCreate, db: Session = Depends(get_db)):
+@police_occurrence_type_router.post("/", response_model=TrafficOccurrenceTypeOut, status_code=201)
+def create_type(payload: TrafficOccurrenceTypeCreate, db: Session = Depends(get_db)):
     try:
         return controller.create(db, payload)
     except ValueError as e:
