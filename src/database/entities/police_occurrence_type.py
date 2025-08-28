@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 
 from .base import Base
 
-class PoliceOccurrenceType(Base):
+class TrafficOccurrenceType(Base):
     __tablename__ = "police_occurrence_types"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

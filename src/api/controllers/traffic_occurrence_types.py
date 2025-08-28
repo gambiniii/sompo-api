@@ -9,7 +9,7 @@ from src.api.schemas.police_occurrence_type import (
     TrafficOccurrenceTypeOut,
 )
 
-class PoliceOccurrenceTypeController:
+class TrafficOccurrenceTypeController:
     def create(self, db: Session, data: TrafficOccurrenceTypeCreate) -> TrafficOccurrenceTypeOut:
         exists = (
             db.query(TrafficOccurrenceType)

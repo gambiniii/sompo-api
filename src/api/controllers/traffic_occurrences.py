@@ -9,7 +9,7 @@ from src.api.schemas.police_occurrence import (
     TrafficOccurrenceCreate, TrafficOccurrenceOut
 )
 
-class PoliceOccurrenceController:
+class TrafficOccurrenceController:
     def create(self, db: Session, data: TrafficOccurrenceCreate):
         exists = (
             db.query(TrafficOccurrenceType.id)
@@ -17,7 +17,7 @@ class PoliceOccurrenceController:
             .first()
         )
         if not exists:
-            raise ValueError("invalid police_occurrence_type_id")
+            raise ValueError("invalid traffic_occurrence_type_id")
 
         obj = TrafficOccurrence(
             police_occurrence_type_id=int(data.police_occurrence_type_id),

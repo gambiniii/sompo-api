@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 
 from src.config.database import get_db
 from src.api.controllers.police_occurrence import PoliceOccurrenceController
-from src.api.schemas.police_occurrence import PoliceOccurrenceCreate, PoliceOccurrenceOut
+from src.api.schemas.police_occurrence import TrafficOccurrenceCreate, TrafficOccurrenceOut
 
 police_occurrence_router = APIRouter(prefix="/police_occurrences", tags=["police_occurrences"])
 controller = PoliceOccurrenceController()
 
-@police_occurrence_router.get("/", response_model=List[PoliceOccurrenceOut])
+@police_occurrence_router.get("/", response_model=List[TrafficOccurrenceOut])
 def list_occurrences(
     type_id: Optional[int] = Query(None),
     start_date: Optional[date] = Query(None),
@@ -27,15 +27,15 @@ def list_occurrences(
         limit=limit, offset=offset
     )
 
-@police_occurrence_router.get("/{occurrence_id}", response_model=PoliceOccurrenceOut)
+@police_occurrence_router.get("/{occurrence_id}", response_model=TrafficOccurrenceOut)
 def get_occurrence(occurrence_id: int, db: Session = Depends(get_db)):
     obj = controller.get_by_id(db, occurrence_id)
     if not obj:
         raise HTTPException(status_code=404, detail="police_occurrence not found")
     return obj
 
-@police_occurrence_router.post("/", response_model=PoliceOccurrenceOut, status_code=201)
-def create_occurrence(payload: PoliceOccurrenceCreate, db: Session = Depends(get_db)):
+@police_occurrence_router.post("/", response_model=TrafficOccurrenceOut, status_code=201)
+def create_occurrence(payload: TrafficOccurrenceCreate, db: Session = Depends(get_db)):
     try:
         return controller.create(db, payload)
     except ValueError as e:  # <- FK inválida, etc.
