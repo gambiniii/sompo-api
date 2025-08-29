@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 
 from .base import Base
 
-class PoliceOccurrence(Base):
+class TrafficOccurrence(Base):
     __tablename__ = "traffic_occurrences"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -14,5 +14,5 @@ class PoliceOccurrence(Base):
     occurred_at = Column(Date, nullable=False)
     h3_id = Column(String(20), ForeignKey("hexagons.id"), nullable=False)
 
-    type = relationship("PoliceOccurrenceType", back_populates="occurrences")
+    type = relationship("TrafficOccurrenceType", back_populates="occurrences")
     hexagon = relationship("Hexagon", back_populates="traffic_occurrences")
