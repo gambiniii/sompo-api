@@ -6,6 +6,6 @@ class PoliceOccurrenceLogic:
     def __init__(self, db: Session):
         self.repository = PoliceOccurrenceRepository(db)
 
-        def list(self, params) -> List[any]:
-            return self.repository.list(params)
+    def list(self, params) -> List[any]:
+        return self.repository.list(params)
 
