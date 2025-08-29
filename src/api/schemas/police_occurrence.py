@@ -12,7 +12,5 @@ class PoliceOccurrenceBase(BaseModel):
 class TrafficOccurrenceCreate(PoliceOccurrenceBase):
     pass
 
-class TrafficOccurrenceOut(PoliceOccurrenceBase):
+class PoliceOccurrenceOut(PoliceOccurrenceBase):
     id: int
-    class Config:
-        from_attributes = True

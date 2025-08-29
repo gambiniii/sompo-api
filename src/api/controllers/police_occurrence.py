@@ -1,9 +1,10 @@
 from typing import List, Optional
+from sqlalchemy.orm import Session
 from src.api.logic.police_occurrence_logic import PoliceOccurrenceLogic
 
 class PoliceOccurrenceController:
-    def __init__(self):
-        self.logic = PoliceOccurrenceLogic()
+    def __init__(self, db: Session):
+        self.logic = PoliceOccurrenceLogic(db)
 
     def list(self, params) -> List[any]:
         data = self.logic.list(params)

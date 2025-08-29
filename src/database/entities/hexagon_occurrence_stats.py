@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
-from base import Base
+from src.database.entities.base import Base
+
 
 class HexagonOccurrenceStats(Base):
     __tablename__ = "hexagon_occurrence_stats"

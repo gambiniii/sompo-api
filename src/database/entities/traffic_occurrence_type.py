@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from src.database.entities.base import Base
+
 
 class TrafficOccurrenceType(Base):
     __tablename__ = "traffic_occurrence_types"

@@ -3,8 +3,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from src.database.entities.police_occurrence import TrafficOccurrence
-from src.database.entities.police_occurrence_type import TrafficOccurrenceType
+from src.database.entities.traffice_occurrence import TrafficOccurrence
+from src.database.entities.traffic_occurrence_type import TrafficOccurrenceType
 from src.api.schemas.police_occurrence import (
     TrafficOccurrenceCreate, TrafficOccurrenceOut
 )

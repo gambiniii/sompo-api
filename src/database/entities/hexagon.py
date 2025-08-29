@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, Float, BigInteger
 from sqlalchemy.orm import relationship
 
-from base import Base
+from src.database.entities.base import Base
+
 
 class Hexagon(Base):
     __tablename__ = "hexagons"

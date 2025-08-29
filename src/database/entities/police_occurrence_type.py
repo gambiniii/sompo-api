@@ -1,9 +1,10 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from src.database.entities.base import Base
 
-class TrafficOccurrenceType(Base):
+
+class PoliceOccurrenceType(Base):
     __tablename__ = "police_occurrence_types"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

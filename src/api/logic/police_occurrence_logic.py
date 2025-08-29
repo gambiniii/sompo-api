@@ -1,11 +1,11 @@
 from typing import List
+from sqlalchemy.orm import Session
 from src.database.repositories.police_occurrence_repository import PoliceOccurrenceRepository
-from src.database.entities.police_occurrence import PoliceOccurrence
 
 class PoliceOccurrenceLogic:
-        def __init__(self):
-            self.repository = PoliceOccurrenceRepository()
+    def __init__(self, db: Session):
+        self.repository = PoliceOccurrenceRepository(db)
 
-        def list(self, params) -> List[PoliceOccurrence]:
+        def list(self, params) -> List[any]:
             return self.repository.list(params)
 
