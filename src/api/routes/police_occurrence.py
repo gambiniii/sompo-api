@@ -1,11 +1,19 @@
-from fastapi import APIRouter
+from typing import List
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-police_occurrence_router = APIRouter(prefix="/police_occurrence", tags=["police_occurrence"])
+from src.api.controllers.police_occurrence import PoliceOccurrenceController
+from src.api.schemas.police_occurrence import PoliceOccurrenceOut
+from src.api.schemas.police_occurrence_params import PoliceOccurrenceParams
+from src.config.database import get_db
 
-@police_occurrence_router.get("/")
-def get_stock():
-    return {"police_occurrence": ["funcionou"]}
+police_occurrence_router = APIRouter(prefix="/police_occurrences", tags=["police_occurrences"])
 
-@police_occurrence_router.get("/{stock_id}")
-def get_stock(stock_id: int):
-    return {"stock_id": stock_id}
+
+@police_occurrence_router.get("/", response_model=List[PoliceOccurrenceOut])
+def list_police_occurrences(    
+    params: PoliceOccurrenceParams = Depends(),
+    db: Session = Depends(get_db)
+):
+    controller = PoliceOccurrenceController(db)
+    return controller.list(params=params)

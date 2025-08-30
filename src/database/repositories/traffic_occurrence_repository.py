@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from database.entities.traffice_occurrence import TrafficOccurrence
-from base import BaseRepository
-
+from src.database.repositories.base import BaseRepository
 
 class TrafficOccurrenceRepository(BaseRepository[TrafficOccurrence]):
     def __init__(self, db: Session):
