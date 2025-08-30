@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.config.database import get_db
-from src.api.controllers.police_occurrence import PoliceOccurrenceController
+from api.controllers.police_occurrence_controller import PoliceOccurrenceController
 from src.api.schemas.police_occurrence import PoliceOccurrenceCreate, PoliceOccurrenceOut
 
 police_occurrence_router = APIRouter(prefix="/police_occurrences", tags=["police_occurrences"])

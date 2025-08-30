@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from src.api.controllers.risk import RiskController
-from src.api.schemas.risk import RouteRequest
+from api.controllers.risk_controller import RiskController
+from api.schemas.risk_schemas import RouteRequest
 
 controller = RiskController()
 

@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from src.api.controllers.police_occurrence import PoliceOccurrenceController
+from api.controllers.police_occurrence_controller import PoliceOccurrenceController
 from src.api.schemas.police_occurrence import PoliceOccurrenceOut
 from src.api.schemas.police_occurrence_params import PoliceOccurrenceParams
 from src.config.database import get_db
