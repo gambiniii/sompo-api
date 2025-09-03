@@ -40,7 +40,7 @@ class PoliceOccurrenceRepository(BaseRepository[PoliceOccurrence]):
         if params.max_lng is not None:
             conds.append(PoliceOccurrence.lng <= params.max_lng)
 
-        if params.conds:
+        if conds:
             q = q.filter(and_(*conds))
 
         return q.offset(params.offset).limit(min(1000, max(1, params.limit))).all()
