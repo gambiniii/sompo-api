@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from api.routes.risk_routes import risk_router
-from api.routes.police_occurrence_routes import police_occurrence_router
+from src.api.routes.risk_routes import risk_router
+from src.api.routes.police_occurrence_routes import police_occurrence_router
 from src.config.database import engine
 from src.database.entities.base import Base
 

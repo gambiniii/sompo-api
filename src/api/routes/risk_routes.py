@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from api.controllers.risk_controller import RiskController
-from api.schemas.risk_schemas import RouteRequest
+from src.api.controllers.risk_controller import RiskController
+from src.api.schemas.risk_schemas import RouteRequest
 
 controller = RiskController()
 
@@ -16,7 +16,3 @@ async def assess_route_risk(route_data: RouteRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-@risk_router.get("/{risk_id}")
-def get_risk(risk_id: int):
-    return {"risk_id": risk_id}

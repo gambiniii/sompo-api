@@ -1,4 +1,4 @@
-from api.logic.risk_logic import RiskUseCase
+from src.api.logic.risk_logic import RiskUseCase
 from typing import List, Tuple
 
 class RiskController:
