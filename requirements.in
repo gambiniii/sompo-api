@@ -8,3 +8,5 @@ sqlalchemy
 psycopg2
 alembic
 python-dotenv
+pandas
+h3

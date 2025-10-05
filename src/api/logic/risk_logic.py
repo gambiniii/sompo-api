@@ -213,23 +213,8 @@ class RiskUseCase:
             density_for_map = float(nl)  # peso para heatmap (0..1)
             risk_score_norm = float(1.0 - nl)  # 1 = maior risco (menor densidade)
 
-            if train_percentiles is not None:
-                p10, p33, p66, p90 = train_percentiles
-                if ls <= p10:
-                    risco = "ALTO"
-                elif ls <= p33:
-                    risco = "MÉDIO"
-                elif ls <= p66:
-                    risco = "BAIXO"
-                else:
-                    risco = "MUITO_BAIXO"
-            else:
-                if risk_score_norm >= 0.66:
-                    risco = "ALTO"
-                elif risk_score_norm >= 0.33:
-                    risco = "MÉDIO"
-                else:
-                    risco = "BAIXO"
+            # Converter risk_score_norm (0-1) para porcentagem de risco (0-100%)
+            risk_percentage = float(risk_score_norm * 100)
 
             results.append(
                 {
@@ -238,7 +223,7 @@ class RiskUseCase:
                     "log_score": float(ls),
                     "normalized_log": density_for_map,
                     "risk_score_norm": risk_score_norm,
-                    "risco": risco,
+                    "risk_percentage": risk_percentage,
                 }
             )
 
@@ -270,19 +255,29 @@ class RiskUseCase:
         HeatMap(heat_data, radius=15, blur=10, max_zoom=13).add_to(mapa)
 
         for r in resultados:
-            if r.get("risco") == "ALTO":
-                folium.CircleMarker(
-                    location=[r["latitude"], r["longitude"]],
-                    radius=8,
-                    color="red",
-                    fill=True,
-                    fillColor="red",
-                    fillOpacity=0.8,
-                    popup=(
-                        f"Risco ALTO | log_score={r['log_score']:.3f} | "
-                        f"normalized={r['normalized_log']:.3f} | risk_norm={r['risk_score_norm']:.3f}"
-                    ),
-                ).add_to(mapa)
+            risk_pct = r.get("risk_percentage", 0)
+            if risk_pct >= 66:
+                color = "red"
+                risk_level = "ALTO"
+            elif risk_pct >= 33:
+                color = "orange"
+                risk_level = "MÉDIO"
+            else:
+                color = "green"
+                risk_level = "BAIXO"
+
+            folium.CircleMarker(
+                location=[r["latitude"], r["longitude"]],
+                radius=8,
+                color=color,
+                fill=True,
+                fillColor=color,
+                fillOpacity=0.8,
+                popup=(
+                    f"Risco: {risk_pct:.1f}% ({risk_level}) | log_score={r['log_score']:.3f} | "
+                    f"normalized={r['normalized_log']:.3f}"
+                ),
+            ).add_to(mapa)
 
         mapa.save(out_file)
         print(f"[RiskUseCase] Mapa salvo como '{out_file}'")
