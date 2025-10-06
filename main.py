@@ -4,6 +4,11 @@ from src.api.routes.risk_routes import risk_router
 from src.api.routes.database_routes import database_router
 from src.api.routes.police_occurrence_routes import police_occurrence_router
 from src.api.routes.traffic_occurrence_routes import traffic_occurrence_router
+from src.api.routes.cargo_theft_routes import cargo_theft_router
+from src.api.routes.cargo_accidents_routes import cargo_accidents_router
+from src.api.routes.traffic_routes import traffic_router
+from src.api.routes.cargo_type_routes import cargo_type_router
+from src.api.routes.routes_routes import routes_router
 
 from src.database.entities.init import __all__
 from src.config.database import engine
@@ -60,3 +65,8 @@ app.include_router(risk_router)
 app.include_router(database_router)
 app.include_router(police_occurrence_router)
 app.include_router(traffic_occurrence_router)
+app.include_router(cargo_theft_router)
+app.include_router(cargo_accidents_router)
+app.include_router(traffic_router)
+app.include_router(cargo_type_router)
+app.include_router(routes_router)
