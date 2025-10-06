@@ -3,5 +3,7 @@ __pycache__
 venv
 
 .env
+.venv
+.venv2
 
 __DATASHEETS
