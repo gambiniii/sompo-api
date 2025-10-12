@@ -9,6 +9,11 @@ class CargoTheftController:
 
     def list(self, params) -> List[any]:
         data = self.logic.list(params)
+
+        for acc in data:
+            acc.lat = round(acc.lat, 6)
+            acc.lng = round(acc.lng, 6)
+
         return data
 
     def get_by_id(self, theft_id: int) -> Optional[any]:
@@ -16,3 +21,11 @@ class CargoTheftController:
 
     def create(self, data) -> any:
         return self.logic.create(data)
+
+    def get_heatmap_data(self, limit: int = 10000):
+        """Retorna dados para heatmap de roubos"""
+        return self.logic.get_heatmap_data(limit=limit)
+
+    def get_monthly_summary(self):
+        """Resumo de roubos por mês"""
+        return self.logic.get_monthly_summary()

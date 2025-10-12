@@ -16,3 +16,26 @@ def list_cargo_thefts(
 ):
     controller = CargoTheftController(db)
     return controller.list(params=params)
+
+
+@cargo_theft_router.get("/heatmap")
+def get_cargo_thefts_heatmap(
+    limit: int = 10000,
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna dados de roubos de carga para exibição em heatmap.
+    Retorna apenas coordenadas (latitude, longitude) e intensidade.
+    """
+    controller = CargoTheftController(db)
+    return controller.get_heatmap_data(limit=limit)
+
+
+@cargo_theft_router.get("/summary/monthly")
+def monthly_summary(db: Session = Depends(get_db)):
+    """
+    Retorna número de roubos de carga por mês.
+    """
+    controller = CargoTheftController(db)
+    return controller.get_monthly_summary()
+

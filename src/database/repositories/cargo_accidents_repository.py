@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Dict
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from src.database.entities.cargo_accidents import CargoAccidents
 from src.database.repositories.base import BaseRepository
@@ -33,3 +34,32 @@ class CargoAccidentsRepository(BaseRepository[CargoAccidents]):
             query = query.filter(CargoAccidents.longitude <= params.max_lng)
 
         return query.offset(params.offset).limit(params.limit).all()
+
+    def get_heatmap_data(self, limit: int = 10000) -> List[CargoAccidents]:
+        """
+        Retorna apenas as coordenadas e informações relevantes para heatmap.
+        Otimizado para performance com limite de registros.
+        """
+        return (
+            self.db.query(CargoAccidents)
+            .order_by(CargoAccidents.date.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def get_monthly_summary(self, limit: int = 10000) -> List[Dict]:
+        """
+        Retorna contagem de acidentes por mês.
+        """
+        results = (
+            self.db.query(
+                func.date_trunc("month", CargoAccidents.date).label("month"),
+                func.count(CargoAccidents.id).label("count"),
+            )
+            .group_by("month")
+            .order_by("month")
+            .limit(limit)
+            .all()
+        )
+
+        return [{"month": r.month.strftime("%Y-%m"), "count": r.count} for r in results]

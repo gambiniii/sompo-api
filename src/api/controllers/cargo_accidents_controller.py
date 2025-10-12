@@ -9,6 +9,11 @@ class CargoAccidentsController:
 
     def list(self, params) -> List[any]:
         data = self.logic.list(params)
+
+        for acc in data:
+            acc.latitude = round(acc.latitude, 6)
+            acc.longitude = round(acc.longitude, 6)
+
         return data
 
     def get_by_id(self, accident_id: int) -> Optional[any]:
@@ -16,3 +21,10 @@ class CargoAccidentsController:
 
     def create(self, data) -> any:
         return self.logic.create(data)
+
+    def get_heatmap_data(self, limit: int = 10000):
+        """Retorna dados para heatmap de acidentes"""
+        return self.logic.get_heatmap_data(limit=limit)
+
+    def get_monthly_summary(self, limit: int = 10000):
+        return self.logic.get_monthly_summary(limit=limit)

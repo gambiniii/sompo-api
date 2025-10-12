@@ -11,6 +11,5 @@ class Hexagon(Base):
     resolution = Column(BigInteger, nullable=False)
     danger_percentage = Column(Float, nullable=False)
 
-    police_occurrences = relationship("PoliceOccurrence", back_populates="hexagon")
-    traffic_occurrences = relationship("TrafficOccurrence", back_populates="hexagon")
+    # Relacionamentos removidos: PoliceOccurrence e TrafficOccurrence não existem mais
     stats = relationship("HexagonOccurrenceStats", back_populates="hexagon")
