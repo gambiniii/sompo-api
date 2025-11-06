@@ -3,15 +3,27 @@ from typing import Optional
 
 
 class CargoTypeBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-    theft: int = Field(..., ge=0)
-    accident: int = Field(..., ge=0)
-    irtc: int = Field(..., ge=0)
-    global_risk_level: int = Field(..., ge=0)
+    categoria: str = Field(..., min_length=1, max_length=50)
+    risco_roubo_percentual: float = Field(..., ge=0)
+    risco_acidente_percentual: float = Field(..., ge=0)
+    descricao: str = Field(..., min_length=1, max_length=500)
+    exemplos: Optional[str] = None
+    riscos_principais: Optional[str] = Field(None, max_length=500)
+    impacto_ambiental: Optional[str] = Field(None, max_length=100)
 
 
 class CargoTypeCreate(CargoTypeBase):
     pass
+
+
+class CargoTypeUpdate(BaseModel):
+    categoria: Optional[str] = Field(None, min_length=1, max_length=50)
+    risco_roubo_percentual: Optional[float] = Field(None, ge=0)
+    risco_acidente_percentual: Optional[float] = Field(None, ge=0)
+    descricao: Optional[str] = Field(None, min_length=1, max_length=500)
+    exemplos: Optional[str] = None
+    riscos_principais: Optional[str] = Field(None, max_length=500)
+    impacto_ambiental: Optional[str] = Field(None, max_length=100)
 
 
 class CargoTypeOut(CargoTypeBase):
@@ -22,12 +34,12 @@ class CargoTypeOut(CargoTypeBase):
 
 
 class CargoTypeParams(BaseModel):
-    name: Optional[str] = None
-    min_theft: Optional[int] = None
-    max_theft: Optional[int] = None
-    min_accident: Optional[int] = None
-    max_accident: Optional[int] = None
-    min_global_risk_level: Optional[int] = None
-    max_global_risk_level: Optional[int] = None
+    categoria: Optional[str] = None
+    descricao: Optional[str] = None
+    min_risco_roubo: Optional[float] = None
+    max_risco_roubo: Optional[float] = None
+    min_risco_acidente: Optional[float] = None
+    max_risco_acidente: Optional[float] = None
+    impacto_ambiental: Optional[str] = None
     limit: int = 100
     offset: int = 0

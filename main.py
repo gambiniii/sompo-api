@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes.risk_routes import risk_router
+from src.api.routes.accident_risk_routes import accident_risk_router
+from src.api.routes.combined_risk_routes import combined_risk_router
+from src.api.routes.separated_risk_routes import separated_risk_router
 from src.api.routes.cargo_theft_routes import cargo_theft_router
 from src.api.routes.cargo_accidents_routes import cargo_accidents_router
 from src.api.routes.traffic_routes import traffic_router
@@ -59,6 +62,9 @@ async def health_check():
 
 # Registra as rotas
 app.include_router(risk_router)
+app.include_router(accident_risk_router)
+app.include_router(combined_risk_router)  # Rota combinada (roubo + acidente)
+app.include_router(separated_risk_router)  # Rota separada com mapeamento automático (RECOMENDADO)
 app.include_router(cargo_theft_router)
 app.include_router(cargo_accidents_router)
 app.include_router(traffic_router)

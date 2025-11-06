@@ -11,19 +11,19 @@ class CargoTypeRepository(BaseRepository[CargoType]):
     def list(self, params) -> List[CargoType]:
         query = self.db.query(CargoType)
 
-        if params.name:
-            query = query.filter(CargoType.name.ilike(f"%{params.name}%"))
-        if params.min_theft:
-            query = query.filter(CargoType.theft >= params.min_theft)
-        if params.max_theft:
-            query = query.filter(CargoType.theft <= params.max_theft)
-        if params.min_accident:
-            query = query.filter(CargoType.accident >= params.min_accident)
-        if params.max_accident:
-            query = query.filter(CargoType.accident <= params.max_accident)
-        if params.min_global_risk_level:
-            query = query.filter(CargoType.global_risk_level >= params.min_global_risk_level)
-        if params.max_global_risk_level:
-            query = query.filter(CargoType.global_risk_level <= params.max_global_risk_level)
+        if params.categoria:
+            query = query.filter(CargoType.categoria.ilike(f"%{params.categoria}%"))
+        if params.descricao:
+            query = query.filter(CargoType.descricao.ilike(f"%{params.descricao}%"))
+        if params.min_risco_roubo is not None:
+            query = query.filter(CargoType.risco_roubo_percentual >= params.min_risco_roubo)
+        if params.max_risco_roubo is not None:
+            query = query.filter(CargoType.risco_roubo_percentual <= params.max_risco_roubo)
+        if params.min_risco_acidente is not None:
+            query = query.filter(CargoType.risco_acidente_percentual >= params.min_risco_acidente)
+        if params.max_risco_acidente is not None:
+            query = query.filter(CargoType.risco_acidente_percentual <= params.max_risco_acidente)
+        if params.impacto_ambiental:
+            query = query.filter(CargoType.impacto_ambiental.ilike(f"%{params.impacto_ambiental}%"))
 
         return query.offset(params.offset).limit(params.limit).all()

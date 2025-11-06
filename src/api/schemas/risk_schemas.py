@@ -1,25 +1,33 @@
-from pydantic import BaseModel, Field
-from typing import List, Tuple, Any, Dict
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Tuple, Any, Dict, Optional
 
 
 class RouteRequest(BaseModel):
     route: List[Tuple[float, float]]  # (lat, lng)
     expected_hour: int = Field(..., ge=0, le=23)  # Hour of the day (0-23)
     weekday: int = Field(..., ge=0, le=6)  # Day of the week (0=Monday, 6=Sunday)
+    cargo_type: str = Field(default="Cargas Fracionadas", description="Tipo de carga")
 
 
-class RiskPoint(BaseModel):
-    latitude: float = Field(..., description="Latitude do ponto")
-    longitude: float = Field(..., description="Longitude do ponto")
-    log_score: float = Field(..., description="Score logarítmico do modelo KDE")
-    normalized_log: float = Field(..., description="Score normalizado (0-1) para heatmap")
-    risk_score_norm: float = Field(..., description="Score de risco normalizado (0-1)")
-    risk_percentage: float = Field(..., description="Porcentagem de risco (0-100%)", ge=0, le=100)
+class CriticalSegment(BaseModel):
+    segment_index: int
+    latitude: float
+    longitude: float
+    risk_level: float
+    risk_percentage: float
 
 
 class RouteRiskResponse(BaseModel):
-    results: List[RiskPoint] = Field(..., description="Análise de risco por ponto da rota")
-    average_log_density: float = Field(..., description="Densidade logarítmica média")
-    average_normalized: float = Field(..., description="Score normalizado médio")
-    points_analyzed: int = Field(..., description="Número de pontos analisados")
-    confidence: float = Field(..., description="Nível de confiança da análise")
+    model_config = ConfigDict(extra='allow')
+
+    risk_score: float = Field(..., description="Score de risco ajustado (0-1)")
+    base_risk: float = Field(..., description="Risco base antes do fator de carga")
+    cargo_factor: float = Field(..., description="Fator multiplicador da carga")
+    cargo_type: str = Field(..., description="Tipo de carga analisado")
+    spatial_risk_avg: float = Field(..., description="Risco espacial médio")
+    spatial_risk_max: float = Field(..., description="Risco espacial máximo")
+    temporal_multiplier: float = Field(..., description="Multiplicador temporal")
+    risk_category: str = Field(..., description="Categoria do risco: BAIXO, MÉDIO, ALTO, CRÍTICO")
+    critical_segments: List[CriticalSegment] = Field(..., description="Segmentos críticos da rota")
+    route_length_km: float = Field(..., description="Comprimento estimado da rota em km")
+    departure_datetime: str = Field(..., description="Data/hora de partida")

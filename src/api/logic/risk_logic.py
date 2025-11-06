@@ -1,285 +1,409 @@
+"""
+RiskUseCase - Predição de Risco em Rotas com Debug Detalhado
+"""
+
+import dill as pickle  # Use dill ao invés de pickle
 import os
-import joblib
-import numpy as np
-import folium
-from folium.plugins import HeatMap
-from typing import List, Tuple, Dict, Any
+from datetime import datetime
+from typing import List, Tuple, Dict, Optional, Union
+from pathlib import Path
+import traceback
 
 
 class RiskUseCase:
-    """Avalia risco de rota usando KDE + scaler.
-
-    Esta versão usa os nomes das colunas exatamente como estão na planilha
-    (ex.: 'LATITUDE', 'LONGITUDE', 'HORA_SIN', 'HORA_COS', 'FIM_DE_SEMANA').
-
-    Arquivos esperados em base_path (padrão src/shared/machine_learning):
-      - modelo_risco_kde.pkl
-      - scaler_risco.pkl (opcional)
-      - features_risco.pkl (opcional): lista com nomes exatamente como na planilha
-      - train_log_scores.pkl (opcional): log-scores do treino para calibrar percentis
-    """
-
+    """Caso de uso para predição de risco em rotas"""
+    
     def __init__(self, base_path: str = "src/shared/machine_learning"):
-        self.base_path = base_path
-
-        # carregar KDE
-        try:
-            self.kde = joblib.load(os.path.join(base_path, "modelo_risco_kde.pkl"))
-        except Exception as e:
-            raise RuntimeError(
-                f"Não foi possível carregar KDE (modelo_risco_kde.pkl): {e}"
-            )
-
-        # carregar scaler (opcional)
-        try:
-            self.scaler = joblib.load(os.path.join(base_path, "scaler_risco.pkl"))
-        except Exception:
-            self.scaler = None
-            print(
-                "[RiskUseCase] Atenção: scaler_risco.pkl não encontrado. Prosseguindo sem scaler."
-            )
-
-        # carregar features (opcional). Espera-se que os nomes sejam exatamente os da planilha.
-        try:
-            self.features = joblib.load(os.path.join(base_path, "features_risco.pkl"))
-            print(
-                "[RiskUseCase] features (usando nomes da planilha) carregadas:",
-                self.features,
-            )
-        except Exception:
-            self.features = None
-            print(
-                "[RiskUseCase] features_risco.pkl não encontrado. Usando ordem padrão [LATITUDE, LONGITUDE, HORA_SIN, HORA_COS, FIM_DE_SEMANA]."
-            )
-
-        # carregar train_log_scores (opcional) para calibrar percentis
-        try:
-            self.train_log_scores = joblib.load(
-                os.path.join(base_path, "train_log_scores.pkl")
-            )
-            print(
-                "[RiskUseCase] train_log_scores carregado para calibração de percentis."
-            )
-        except Exception:
-            self.train_log_scores = None
-
-    def _build_row_from_features(
-        self, lat: float, lon: float, expected_hour: int, weekday: int
-    ) -> List[float]:
-        """Monta uma linha de features seguindo os nomes EXATOS da planilha.
-
-        Se self.features estiver presente, usamos a ordem e os nomes tal qual aparecem nela.
-        Exemplos de nomes esperados na planilha (caso você não tenha fornecido features_risco.pkl):
-          - 'LATITUDE'
-          - 'LONGITUDE'
-          - 'HORA_SIN'
-          - 'HORA_COS'
-          - 'FIM_DE_SEMANA'
-
-        Se algum nome da planilha não for reconhecido, preenchemos com 0.0 e emitimos aviso.
         """
-        hora_sin = np.sin(2 * np.pi * expected_hour / 24)
-        hora_cos = np.cos(2 * np.pi * expected_hour / 24)
-        fim_de_semana = 1 if weekday >= 5 else 0
-
-        # mapeamento para os nomes exatos da planilha (MAIÚSCULAS)
-        mapping_exact = {
-            "LATITUDE": lat,
-            "LONGITUDE": lon,
-            "LON": lon,
-            "LONG": lon,
-            "LAT": lat,
-            "HORA_SIN": hora_sin,
-            "HORA_COS": hora_cos,
-            "FIM_DE_SEMANA": fim_de_semana,
-            # algumas planilhas podem ter variações, adicionamos aliases comuns
-            "latitude": lat,
-            "longitude": lon,
-            "hora_sin": hora_sin,
-            "hora_cos": hora_cos,
-            "fim_de_semana": fim_de_semana,
-            "WEEKDAY": float(weekday),
-            "HOUR": float(expected_hour),
-        }
-
-        if self.features:
-            row = []
-            for feat in self.features:
-                # usar exatamente o nome que veio da planilha
-                if feat in mapping_exact:
-                    row.append(mapping_exact[feat])
-                else:
-                    # tentar versão maiúscula/minúscula como fallback
-                    if feat.upper() in mapping_exact:
-                        row.append(mapping_exact[feat.upper()])
-                    elif feat.lower() in mapping_exact:
-                        row.append(mapping_exact[feat.lower()])
-                    else:
-                        row.append(0.0)
-                        print(
-                            f"[RiskUseCase] Atenção: feature '{feat}' não mapeada; usando 0.0"
-                        )
-        else:
-            # ordem padrão usando nomes da planilha (MAIÚSCULAS)
-            row = [lat, lon, hora_sin, hora_cos, fim_de_semana]
-
-        return row
-
-    def route_risk_assessment(
-        self, route: List[Tuple[float, float]], expected_hour: int, weekday: int
-    ) -> Dict[str, Any]:
-        """Avalia uma rota e retorna resultados por ponto + resumo."""
-        if not route:
-            return {
-                "results": [],
-                "average_log_density": None,
-                "average_normalized": None,
-                "points_analyzed": 0,
-                "confidence": 0.0,
-            }
-
-        inputs = [
-            self._build_row_from_features(lat, lon, expected_hour, weekday)
-            for lat, lon in route
-        ]
-        X = np.asarray(inputs)
-
-        # diagnóstico
-        print("[RiskUseCase] X.shape:", X.shape)
-        print("[RiskUseCase] X sample (first 5 rows): ", X[:5])
-        if self.scaler is not None and hasattr(self.scaler, "n_features_in_"):
-            print(
-                "[RiskUseCase] scaler.n_features_in_:",
-                getattr(self.scaler, "n_features_in_", None),
-            )
-        if self.features is not None:
-            print("[RiskUseCase] features (planilha):", self.features)
-
-        # aplicar scaler se existir
-        if self.scaler is not None:
-            try:
-                X_scaled = self.scaler.transform(X)
-            except Exception as e:
-                raise RuntimeError(f"Erro ao aplicar scaler.transform: {e}")
-        else:
-            X_scaled = X
-
-        print(
-            "[RiskUseCase] X_scaled stats: min, max, mean, std ->",
-            np.min(X_scaled),
-            np.max(X_scaled),
-            np.mean(X_scaled),
-            np.std(X_scaled),
-        )
-
-        # obter log-density
+        Inicializa e carrega o modelo
+        
+        Args:
+            base_path: Caminho onde está o route_risk_model.pkl
+        """
+        self.base_path = Path(base_path)
+        self.model_filename = "route_risk_model.pkl"
+        self.model_path = self.base_path / self.model_filename
+        self.predictor = None
+        
+        print(f"🔍 Inicializando RiskUseCase...")
+        print(f"   Buscando modelo em: {self.model_path}")
+        
+        # Carregar modelo
+        self._load_model()
+    
+    def _load_model(self):
+        """Carrega o modelo .pkl"""
         try:
-            log_scores = self.kde.score_samples(X_scaled)
-        except Exception as e:
-            raise RuntimeError(f"Erro ao calcular score_samples no KDE: {e}")
-
-        print(
-            "[RiskUseCase] log_scores stats: min, max, mean, std ->",
-            np.min(log_scores),
-            np.max(log_scores),
-            np.mean(log_scores),
-            np.std(log_scores),
-        )
-
-        # normalizar log_scores diretamente para [0,1]
-        min_ls, max_ls = float(np.min(log_scores)), float(np.max(log_scores))
-        if max_ls - min_ls > 0:
-            normalized_log = (log_scores - min_ls) / (max_ls - min_ls)
-        else:
-            normalized_log = np.zeros_like(log_scores)
-
-        # usar percentis do treino (se existir) para calibrar classificação
-        train_percentiles = None
-        if self.train_log_scores is not None:
-            try:
-                p10 = np.percentile(self.train_log_scores, 10)
-                p33 = np.percentile(self.train_log_scores, 33)
-                p66 = np.percentile(self.train_log_scores, 66)
-                p90 = np.percentile(self.train_log_scores, 90)
-                train_percentiles = (p10, p33, p66, p90)
-                print(
-                    "[RiskUseCase] train percentiles (10,33,66,90):", train_percentiles
+            # Verificar se arquivo existe
+            if not self.model_path.exists():
+                raise FileNotFoundError(
+                    f"❌ Modelo não encontrado: {self.model_path}\n"
+                    f"   Certifique-se que {self.model_filename} está em {self.base_path}"
                 )
-            except Exception:
-                train_percentiles = None
-
-        results = []
-        for (lat, lon), ls, nl in zip(route, log_scores, normalized_log):
-            density_for_map = float(nl)  # peso para heatmap (0..1)
-            risk_score_norm = float(1.0 - nl)  # 1 = maior risco (menor densidade)
-
-            # Converter risk_score_norm (0-1) para porcentagem de risco (0-100%)
-            risk_percentage = float(risk_score_norm * 100)
-
-            results.append(
-                {
-                    "latitude": float(lat),
-                    "longitude": float(lon),
-                    "log_score": float(ls),
-                    "normalized_log": density_for_map,
-                    "risk_score_norm": risk_score_norm,
-                    "risk_percentage": risk_percentage,
-                }
+            
+            print(f"📦 Carregando modelo...")
+            
+            # Carregar com dill (melhor para objetos complexos)
+            with open(self.model_path, 'rb') as f:
+                self.predictor = pickle.load(f)
+            
+            # Validações
+            if not hasattr(self.predictor, 'predict_route_risk'):
+                raise ValueError("Modelo não possui método 'predict_route_risk'")
+            
+            if not hasattr(self.predictor, 'is_fitted'):
+                raise ValueError("Modelo não possui atributo 'is_fitted'")
+            
+            if not self.predictor.is_fitted:
+                raise ValueError("Modelo não está treinado (is_fitted=False)")
+            
+            print(f"✅ Modelo carregado com sucesso!")
+            print(f"   • Tipos de carga: {len(self.predictor.cargo_risk_factors)}")
+            print(f"   • Registros históricos: {len(self.predictor.historical_data):,}")
+            
+        except Exception as e:
+            print(f"❌ ERRO ao carregar modelo: {e}")
+            print(traceback.format_exc())
+            raise
+    
+    def predict_route_risk(
+        self,
+        route_coords: Union[List[List[float]], List[Tuple[float, float]]],
+        departure_datetime: Union[str, datetime],
+        cargo_type: str
+    ) -> Dict:
+        """
+        Predição de risco para uma rota
+        
+        Args:
+            route_coords: Lista de coordenadas
+                Aceita: [[-23.55, -46.63], [-23.54, -46.62], ...]
+                ou: [(-23.55, -46.63), (-23.54, -46.62), ...]
+            
+            departure_datetime: Data/hora de partida
+                Aceita string: "2025-10-15 18:00:00" ou datetime object
+            
+            cargo_type: Tipo de carga (string)
+        
+        Returns:
+            Dict com resultado da predição
+        
+        Raises:
+            ValueError: Dados inválidos
+            Exception: Erros durante predição
+        """
+        
+        print("\n" + "="*70)
+        print("🎯 INICIANDO PREDIÇÃO")
+        print("="*70)
+        
+        try:
+            # 1. Validar modelo carregado
+            if self.predictor is None:
+                raise RuntimeError("Modelo não carregado")
+            
+            # 2. Processar e validar inputs
+            print("\n1️⃣ Processando inputs...")
+            
+            # Processar coordenadas
+            print(f"   📍 Rota recebida: {len(route_coords)} pontos")
+            print(f"      Tipo: {type(route_coords)}")
+            print(f"      Primeira coord: {route_coords[0] if route_coords else 'N/A'}")
+            
+            route_tuples = self._process_coordinates(route_coords)
+            print(f"   ✅ Coordenadas processadas: {len(route_tuples)} pontos")
+            
+            # Processar data/hora
+            print(f"\n   📅 Data recebida: {departure_datetime}")
+            print(f"      Tipo: {type(departure_datetime)}")
+            
+            dt = self._process_datetime(departure_datetime)
+            print(f"   ✅ Data processada: {dt}")
+            
+            # Processar tipo de carga
+            print(f"\n   📦 Carga recebida: '{cargo_type}'")
+            print(f"      Tipo: {type(cargo_type)}")
+            
+            cargo_validated = self._validate_cargo_type(cargo_type)
+            print(f"   ✅ Carga validada: '{cargo_validated}'")
+            
+            # 3. Fazer predição
+            print("\n2️⃣ Executando predição no modelo...")
+            
+            result = self.predictor.predict_route_risk(
+                route_coords=route_tuples,
+                departure_datetime=dt,
+                cargo_type=cargo_validated
             )
-
-        summary = {
-            "results": results,
-            "average_log_density": float(np.mean(log_scores)),
-            "average_normalized": float(np.mean(normalized_log)),
-            "points_analyzed": len(results),
-            "confidence": 0.95,
+            
+            print(f"   ✅ Predição concluída!")
+            print(f"      Risco: {result['risk_category']}")
+            print(f"      Score: {result['risk_score']:.4f}")
+            
+            print("\n" + "="*70)
+            print("✅ PREDIÇÃO FINALIZADA COM SUCESSO")
+            print("="*70 + "\n")
+            
+            return result
+            
+        except ValueError as e:
+            print(f"\n❌ ERRO DE VALIDAÇÃO: {e}")
+            raise
+        except Exception as e:
+            print(f"\n❌ ERRO DURANTE PREDIÇÃO: {e}")
+            print(traceback.format_exc())
+            raise
+    
+    def _process_coordinates(
+        self, 
+        coords: Union[List[List[float]], List[Tuple[float, float]]]
+    ) -> List[Tuple[float, float]]:
+        """
+        Processa e valida coordenadas
+        Converte listas em tuplas
+        """
+        
+        # Validar tipo
+        if not isinstance(coords, list):
+            raise ValueError(f"route_coords deve ser lista, recebido: {type(coords)}")
+        
+        # Validar quantidade mínima
+        if len(coords) < 2:
+            raise ValueError(f"Rota deve ter pelo menos 2 pontos, recebido: {len(coords)}")
+        
+        # Processar cada coordenada
+        processed = []
+        for i, coord in enumerate(coords):
+            
+            # Converter para lista se necessário
+            if isinstance(coord, tuple):
+                coord = list(coord)
+            
+            # Validar formato
+            if not isinstance(coord, list) or len(coord) != 2:
+                raise ValueError(
+                    f"Coordenada {i} inválida: deve ser [lat, lon], "
+                    f"recebido: {coord} (tipo: {type(coord)})"
+                )
+            
+            lat, lon = coord
+            
+            # Validar tipos
+            if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+                raise ValueError(
+                    f"Coordenada {i}: lat e lon devem ser numéricos, "
+                    f"recebido: lat={lat} (tipo: {type(lat)}), "
+                    f"lon={lon} (tipo: {type(lon)})"
+                )
+            
+            # Validar ranges
+            if not (-90 <= lat <= 90):
+                raise ValueError(f"Coordenada {i}: latitude {lat} fora do range [-90, 90]")
+            
+            if not (-180 <= lon <= 180):
+                raise ValueError(f"Coordenada {i}: longitude {lon} fora do range [-180, 180]")
+            
+            # Adicionar como tupla
+            processed.append((float(lat), float(lon)))
+        
+        return processed
+    
+    def _process_datetime(
+        self, 
+        dt: Union[str, datetime]
+    ) -> datetime:
+        """
+        Processa e valida data/hora
+        Converte string para datetime se necessário
+        """
+        
+        # Se já é datetime, retornar
+        if isinstance(dt, datetime):
+            return dt
+        
+        # Se é string, tentar converter
+        if isinstance(dt, str):
+            formats = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d %H:%M',
+                '%Y-%m-%dT%H:%M:%S',
+                '%Y-%m-%dT%H:%M',
+                '%d/%m/%Y %H:%M:%S',
+                '%d/%m/%Y %H:%M'
+            ]
+            
+            for fmt in formats:
+                try:
+                    return datetime.strptime(dt, fmt)
+                except ValueError:
+                    continue
+            
+            # Se nenhum formato funcionou
+            raise ValueError(
+                f"Formato de data/hora inválido: '{dt}'\n"
+                f"Formatos aceitos:\n"
+                f"  - YYYY-MM-DD HH:MM:SS\n"
+                f"  - YYYY-MM-DD HH:MM\n"
+                f"  - YYYY-MM-DDTHH:MM:SS (ISO)\n"
+                f"  - DD/MM/YYYY HH:MM:SS\n"
+                f"  - DD/MM/YYYY HH:MM"
+            )
+        
+        raise ValueError(
+            f"departure_datetime deve ser string ou datetime, "
+            f"recebido: {type(dt)}"
+        )
+    
+    def _validate_cargo_type(self, cargo: str) -> str:
+        """
+        Valida tipo de carga
+        Remove espaços extras e valida contra lista disponível
+        """
+        
+        # Validar tipo
+        if not isinstance(cargo, str):
+            raise ValueError(f"cargo_type deve ser string, recebido: {type(cargo)}")
+        
+        # Limpar string
+        cargo_clean = cargo.strip()
+        
+        if not cargo_clean:
+            raise ValueError("cargo_type não pode ser vazio")
+        
+        # Validar contra lista disponível
+        available_cargos = list(self.predictor.cargo_risk_factors.keys())
+        
+        if cargo_clean not in available_cargos:
+            # Sugerir carga mais próxima (case-insensitive)
+            cargo_lower = cargo_clean.lower()
+            suggestions = [
+                c for c in available_cargos 
+                if cargo_lower in c.lower() or c.lower() in cargo_lower
+            ]
+            
+            error_msg = f"Tipo de carga '{cargo_clean}' não encontrado.\n"
+            error_msg += f"\nTipos disponíveis:\n"
+            for c in available_cargos:
+                error_msg += f"  • {c}\n"
+            
+            if suggestions:
+                error_msg += f"\nVocê quis dizer: {', '.join(suggestions)}?"
+            
+            raise ValueError(error_msg)
+        
+        return cargo_clean
+    
+    def get_available_cargo_types(self) -> List[Dict]:
+        """Retorna tipos de carga disponíveis"""
+        if self.predictor is None:
+            raise RuntimeError("Modelo não carregado")
+        
+        return [
+            {
+                'name': cargo,
+                'risk_factor_percent': float(factor),
+                'risk_multiplier': round(1 + (factor / 100), 4)
+            }
+            for cargo, factor in sorted(
+                self.predictor.cargo_risk_factors.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )
+        ]
+    
+    def get_model_info(self) -> Dict:
+        """Retorna informações do modelo"""
+        if self.predictor is None:
+            raise RuntimeError("Modelo não carregado")
+        
+        metadata = self.predictor.model_metadata
+        
+        return {
+            'model_file': str(self.model_path),
+            'model_size_mb': round(os.path.getsize(self.model_path) / (1024*1024), 2),
+            'is_loaded': True,
+            'trained_at': metadata.get('trained_at'),
+            'total_records': metadata.get('total_records'),
+            'date_range': metadata.get('date_range'),
+            'spatial_bounds': metadata.get('spatial_bounds'),
+            'cargo_types': self.get_available_cargo_types()
         }
 
-        return summary
 
-    def create_heatmap(
-        self, resultados: List[Dict[str, Any]], out_file: str = "analise_rota.html"
-    ) -> None:
-        if not resultados:
-            print("[RiskUseCase] Nenhum resultado para desenhar no mapa.")
-            return
+# ============================================================================
+# TESTE LOCAL (para debug)
+# ============================================================================
 
-        avg_lat = np.mean([r["latitude"] for r in resultados])
-        avg_lon = np.mean([r["longitude"] for r in resultados])
-
-        mapa = folium.Map(location=[avg_lat, avg_lon], zoom_start=12)
-        heat_data = [
-            [r["latitude"], r["longitude"], r.get("normalized_log", 0.0)]
-            for r in resultados
-        ]
-        HeatMap(heat_data, radius=15, blur=10, max_zoom=13).add_to(mapa)
-
-        for r in resultados:
-            risk_pct = r.get("risk_percentage", 0)
-            if risk_pct >= 66:
-                color = "red"
-                risk_level = "ALTO"
-            elif risk_pct >= 33:
-                color = "orange"
-                risk_level = "MÉDIO"
-            else:
-                color = "green"
-                risk_level = "BAIXO"
-
-            folium.CircleMarker(
-                location=[r["latitude"], r["longitude"]],
-                radius=8,
-                color=color,
-                fill=True,
-                fillColor=color,
-                fillOpacity=0.8,
-                popup=(
-                    f"Risco: {risk_pct:.1f}% ({risk_level}) | log_score={r['log_score']:.3f} | "
-                    f"normalized={r['normalized_log']:.3f}"
-                ),
-            ).add_to(mapa)
-
-        mapa.save(out_file)
-        print(f"[RiskUseCase] Mapa salvo como '{out_file}'")
-
-
+if __name__ == "__main__":
+    
+    print("\n" + "="*70)
+    print("TESTE DO RiskUseCase")
+    print("="*70 + "\n")
+    
+    try:
+        # Inicializar (ajuste o caminho se necessário)
+        risk_uc = RiskUseCase(base_path=".")
+        
+        # Teste 1: Predição básica
+        print("\n" + "="*70)
+        print("TESTE 1: Predição Básica")
+        print("="*70)
+        
+        result = risk_uc.predict_route_risk(
+            route_coords=[
+                [-23.5505, -46.6333],
+                [-23.5489, -46.6388],
+                [-23.5528, -46.6299]
+            ],
+            departure_datetime="2025-10-15 18:00:00",
+            cargo_type="Cigarros"
+        )
+        
+        print(f"\n✅ RESULTADO:")
+        print(f"   Risco: {result['risk_category']}")
+        print(f"   Score: {result['risk_score']:.4f}")
+        print(f"   Distância: {result['route_length_km']:.2f} km")
+        
+        # Teste 2: Formatos diferentes
+        print("\n" + "="*70)
+        print("TESTE 2: Formatos Alternativos")
+        print("="*70)
+        
+        # Com tuplas
+        result2 = risk_uc.predict_route_risk(
+            route_coords=[
+                (-23.5505, -46.6333),
+                (-23.5489, -46.6388)
+            ],
+            departure_datetime=datetime(2025, 10, 15, 18, 0),
+            cargo_type="Alimentício"
+        )
+        print(f"\n✅ Com tuplas: {result2['risk_category']}")
+        
+        # Teste 3: Ver tipos de carga
+        print("\n" + "="*70)
+        print("TESTE 3: Tipos de Carga Disponíveis")
+        print("="*70)
+        
+        cargos = risk_uc.get_available_cargo_types()
+        print(f"\nTotal: {len(cargos)} tipos")
+        for cargo in cargos[:5]:
+            print(f"   • {cargo['name']:.<30} +{cargo['risk_factor_percent']:.1f}%")
+        
+        # Teste 4: Info do modelo
+        print("\n" + "="*70)
+        print("TESTE 4: Informações do Modelo")
+        print("="*70)
+        
+        info = risk_uc.get_model_info()
+        print(f"\nArquivo: {info['model_file']}")
+        print(f"Tamanho: {info['model_size_mb']} MB")
+        print(f"Treinado em: {info['trained_at']}")
+        
+        print("\n" + "="*70)
+        print("✅ TODOS OS TESTES PASSARAM!")
+        print("="*70 + "\n")
+        
+    except Exception as e:
+        print(f"\n❌ ERRO NO TESTE: {e}")
+        print(traceback.format_exc())

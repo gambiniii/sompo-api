@@ -11,13 +11,14 @@ async def assess_route_risk(route_data: RouteRequest) -> RouteRiskResponse:
     """
     Avalia o risco de uma rota baseado em dados históricos de ocorrências.
 
-    Retorna a porcentagem de risco (0-100%) para cada ponto da rota.
+    Retorna análise completa de risco incluindo score, categoria e segmentos críticos.
     """
     try:
         return controller.route_risk_assessment(
             route_data.route,
             route_data.expected_hour,
-            route_data.weekday
+            route_data.weekday,
+            route_data.cargo_type
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -8,12 +8,24 @@ from urllib.parse import quote_plus  # Import para codificar a senha
 load_dotenv()
 
 
+# Lê as variáveis de ambiente com validação
+def get_env_variable(var_name: str, default: str = None) -> str:
+    """Obtém uma variável de ambiente e lança erro se não existir e não houver default"""
+    value = os.getenv(var_name, default)
+    if value is None:
+        raise ValueError(
+            f"A variável de ambiente '{var_name}' não está definida. "
+            f"Por favor, crie um arquivo .env com todas as variáveis necessárias."
+        )
+    return value
+
+
 # Constrói a URL de conexão
-password = os.getenv("POSTGRES_PASS")
+password = get_env_variable("POSTGRES_PASS")
 encoded_password = quote_plus(password)  # Isso converterá @ para %40
 
 # Constrói a URL de conexão com a senha codificada
-DATABASE_URL = f"postgresql://{os.getenv('POSTGRES_USER')}:{encoded_password}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB_NAME')}"
+DATABASE_URL = f"postgresql://{get_env_variable('POSTGRES_USER')}:{encoded_password}@{get_env_variable('POSTGRES_HOST')}:{get_env_variable('POSTGRES_PORT')}/{get_env_variable('POSTGRES_DB_NAME')}"
 
 # Cria o engine
 engine = create_engine(
